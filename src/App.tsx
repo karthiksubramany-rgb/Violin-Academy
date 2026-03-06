@@ -14,6 +14,10 @@ import { videoService } from './services/videoService';
 import { Calendar } from './components/Calendar';
 import { VideoPortal } from './components/VideoPortal';
 import { PricingTable, PayPalButtons } from './components/Payments';
+import { TeacherProfile } from './components/TeacherProfile';
+import { FAQ } from './components/FAQ';
+import { Guidelines } from './components/Guidelines';
+import { Mentorship } from './components/Mentorship';
 import { 
   Music, 
   Calendar as CalendarIcon, 
@@ -26,7 +30,10 @@ import {
   ArrowRight,
   CheckCircle2,
   X,
-  Clock
+  Clock,
+  HelpCircle,
+  FileText,
+  BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
@@ -36,13 +43,15 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'booking' | 'videos' | 'account'>('booking');
+  const [activeTab, setActiveTab] = useState<'booking' | 'videos' | 'account' | 'faq' | 'guidelines' | 'mentorship'>('booking');
   
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [videos, setVideos] = useState<VideoTutorial[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<AvailabilitySlot | null>(null);
+  const [bookedLesson, setBookedLesson] = useState<Lesson | null>(null);
   const [showPayment, setShowPayment] = useState(false);
+  const [showTeacherProfile, setShowTeacherProfile] = useState(false);
   const [showAddSlot, setShowAddSlot] = useState(false);
   const [newSlotTime, setNewSlotTime] = useState(format(new Date(), "yyyy-MM-dd'T'HH:mm"));
   const [newSlotDuration, setNewSlotDuration] = useState(30);
@@ -123,7 +132,8 @@ export default function App() {
       status: 'scheduled'
     };
 
-    await lessonService.bookLesson(lesson, selectedSlot.id);
+    const lessonId = await lessonService.bookLesson(lesson, selectedSlot.id);
+    setBookedLesson({ ...lesson, id: lessonId } as Lesson);
     setSelectedSlot(null);
     setShowPayment(false);
   };
@@ -216,6 +226,9 @@ export default function App() {
             {[
               { id: 'booking', icon: CalendarIcon, label: 'Lessons' },
               { id: 'videos', icon: Video, label: 'Tutorials' },
+              { id: 'mentorship', icon: BookOpen, label: 'Mentorship' },
+              { id: 'faq', icon: HelpCircle, label: 'FAQ' },
+              { id: 'guidelines', icon: FileText, label: 'Guidelines' },
               { id: 'account', icon: UserIcon, label: 'Account' },
             ].map((tab) => (
               <button
@@ -264,7 +277,15 @@ export default function App() {
                   <div className="flex items-center justify-between">
                     <div>
                       <h2 className="text-4xl font-serif italic text-stone-900">Book a Lesson</h2>
-                      <p className="text-stone-500 mt-2">Choose a time that works for your schedule.</p>
+                      <p className="text-stone-500 mt-2">
+                        Choose a time that works for your schedule with{' '}
+                        <button 
+                          onClick={() => setShowTeacherProfile(true)}
+                          className="text-stone-900 font-bold underline decoration-stone-300 underline-offset-4 hover:decoration-stone-900 transition-all"
+                        >
+                          Karthik Subramany
+                        </button>
+                      </p>
                     </div>
                     {profile?.role === 'teacher' && (
                       <button
@@ -372,6 +393,39 @@ export default function App() {
               </div>
             </motion.div>
           )}
+
+          {activeTab === 'faq' && (
+            <motion.div
+              key="faq"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <FAQ />
+            </motion.div>
+          )}
+
+          {activeTab === 'guidelines' && (
+            <motion.div
+              key="guidelines"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <Guidelines />
+            </motion.div>
+          )}
+
+          {activeTab === 'mentorship' && (
+            <motion.div
+              key="mentorship"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+            >
+              <Mentorship />
+            </motion.div>
+          )}
         </AnimatePresence>
       </main>
 
@@ -420,13 +474,21 @@ export default function App() {
                 </div>
 
                 {!showPayment ? (
-                  <button
-                    onClick={() => setShowPayment(true)}
-                    className="w-full py-4 bg-stone-900 text-white rounded-2xl font-bold hover:bg-stone-800 transition-all shadow-lg shadow-stone-200 flex items-center justify-center gap-2"
-                  >
-                    Proceed to Payment
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setSelectedSlot(null)}
+                      className="flex-1 py-4 bg-stone-100 text-stone-600 rounded-2xl font-bold hover:bg-stone-200 transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => setShowPayment(true)}
+                      className="flex-[2] py-4 bg-stone-900 text-white rounded-2xl font-bold hover:bg-stone-800 transition-all shadow-lg shadow-stone-200 flex items-center justify-center gap-2"
+                    >
+                      Confirm & Pay
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
                 ) : (
                   <PayPalButtons 
                     amount={25} 
@@ -519,6 +581,72 @@ export default function App() {
                   Create Slot
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Booking Success Modal */}
+      <AnimatePresence>
+        {bookedLesson && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl"
+            >
+              <div className="p-10 text-center space-y-6">
+                <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="w-10 h-10" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-3xl font-serif italic text-stone-900">Booking Confirmed!</h3>
+                  <p className="text-stone-500">Your violin lesson has been successfully scheduled.</p>
+                </div>
+
+                <div className="p-6 bg-stone-50 rounded-2xl border border-black/5 text-left space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-stone-400">Date</span>
+                    <span className="font-medium text-stone-900">
+                      {format(parseISO(bookedLesson.startTime), 'EEEE, MMM do')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-stone-400">Time</span>
+                    <span className="font-medium text-stone-900">
+                      {format(parseISO(bookedLesson.startTime), 'h:mm a')} - {format(parseISO(bookedLesson.endTime), 'h:mm a')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-stone-400">Duration</span>
+                    <span className="font-medium text-stone-900">{bookedLesson.duration} minutes</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setBookedLesson(null)}
+                  className="w-full py-4 bg-stone-900 text-white rounded-2xl font-bold hover:bg-stone-800 transition-all shadow-lg"
+                >
+                  Great, thanks!
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Teacher Profile Modal */}
+      <AnimatePresence>
+        {showTeacherProfile && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 40 }}
+              className="w-full max-w-4xl my-8"
+            >
+              <TeacherProfile onClose={() => setShowTeacherProfile(false)} />
             </motion.div>
           </div>
         )}
