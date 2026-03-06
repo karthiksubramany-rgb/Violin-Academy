@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A student or teacher in the academy",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "teacher"] },
+        "currency": { "type": "string", "enum": ["USD", "GBP", "INR"] },
+        "subscriptionStatus": { "type": "string", "enum": ["none", "weekly", "monthly"] },
+        "photoURL": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Availability": {
+      "title": "Availability",
+      "description": "Open time slots for lessons",
+      "type": "object",
+      "properties": {
+        "teacherId": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "isBooked": { "type": "boolean" }
+      },
+      "required": ["teacherId", "startTime", "endTime", "isBooked"]
+    },
+    "Lesson": {
+      "title": "Lesson",
+      "description": "A booked violin lesson",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "duration": { "type": "integer" },
+        "price": { "type": "number" },
+        "currency": { "type": "string" },
+        "status": { "type": "string", "enum": ["scheduled", "completed", "cancelled"] }
+      },
+      "required": ["studentId", "teacherId", "startTime", "endTime", "duration", "price", "currency", "status"]
+    },
+    "Video": {
+      "title": "Video",
+      "description": "Tutorial video clip",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "videoUrl", "teacherId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/availability/{slotId}": {
+      "schema": "Availability",
+      "description": "Teacher availability slots"
+    },
+    "/lessons/{lessonId}": {
+      "schema": "Lesson",
+      "description": "Booked lessons"
+    },
+    "/videos/{videoId}": {
+      "schema": "Video",
+      "description": "Tutorial videos"
+    }
+  }
+}
